@@ -1,5 +1,10 @@
 # Bio-RAG
 
+[![CI](https://github.com/david1005910/bio-rag/workflows/CI/badge.svg)](https://github.com/david1005910/bio-rag/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-blue.svg)](https://www.typescriptlang.org/)
+
 **Biomedical Research AI-Guided Analytics Platform**
 
 RAG 기반 바이오의학 논문 검색 및 AI Q&A 플랫폼
