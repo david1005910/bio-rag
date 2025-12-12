@@ -1,0 +1,156 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'frontend/**'
+      - 'infra/kubernetes/**'
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deployment environment'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - staging
+          - prod
+
+env:
+  AWS_REGION: ap-northeast-2
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    outputs:
+      image_tag: ${{ steps.build.outputs.image_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: build
+        run: |
+          IMAGE_TAG="${{ github.sha }}-$(date +%Y%m%d%H%M%S)"
+          echo "image_tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+          echo "IMAGE_TAG=${IMAGE_TAG}" >> $GITHUB_ENV
+
+      - name: Build and push backend image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/bio-rag/backend:$IMAGE_TAG -f backend/Dockerfile backend/
+          docker push $ECR_REGISTRY/bio-rag/backend:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/bio-rag/backend:$IMAGE_TAG $ECR_REGISTRY/bio-rag/backend:latest
+          docker push $ECR_REGISTRY/bio-rag/backend:latest
+
+      - name: Build and push frontend image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+        run: |
+          docker build -t $ECR_REGISTRY/bio-rag/frontend:$IMAGE_TAG -f frontend/Dockerfile frontend/
+          docker push $ECR_REGISTRY/bio-rag/frontend:$IMAGE_TAG
+          docker tag $ECR_REGISTRY/bio-rag/frontend:$IMAGE_TAG $ECR_REGISTRY/bio-rag/frontend:latest
+          docker push $ECR_REGISTRY/bio-rag/frontend:latest
+
+  deploy-dev:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || github.event.inputs.environment == 'dev'
+    environment: dev
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name bio-rag-dev
+
+      - name: Deploy to EKS
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+        run: |
+          # Update image tags in deployments
+          kubectl set image deployment/bio-rag-backend \
+            backend=${{ secrets.ECR_REGISTRY }}/bio-rag/backend:${IMAGE_TAG} \
+            -n bio-rag
+          kubectl set image deployment/bio-rag-frontend \
+            frontend=${{ secrets.ECR_REGISTRY }}/bio-rag/frontend:${IMAGE_TAG} \
+            -n bio-rag
+          kubectl set image deployment/bio-rag-worker \
+            worker=${{ secrets.ECR_REGISTRY }}/bio-rag/backend:${IMAGE_TAG} \
+            -n bio-rag
+
+          # Wait for rollout
+          kubectl rollout status deployment/bio-rag-backend -n bio-rag --timeout=300s
+          kubectl rollout status deployment/bio-rag-frontend -n bio-rag --timeout=300s
+
+  deploy-prod:
+    needs: [build-and-push, deploy-dev]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.environment == 'prod'
+    environment: prod
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN_PROD }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name bio-rag-prod
+
+      - name: Deploy to EKS
+        env:
+          IMAGE_TAG: ${{ needs.build-and-push.outputs.image_tag }}
+        run: |
+          kubectl set image deployment/bio-rag-backend \
+            backend=${{ secrets.ECR_REGISTRY }}/bio-rag/backend:${IMAGE_TAG} \
+            -n bio-rag
+          kubectl set image deployment/bio-rag-frontend \
+            frontend=${{ secrets.ECR_REGISTRY }}/bio-rag/frontend:${IMAGE_TAG} \
+            -n bio-rag
+          kubectl set image deployment/bio-rag-worker \
+            worker=${{ secrets.ECR_REGISTRY }}/bio-rag/backend:${IMAGE_TAG} \
+            -n bio-rag
+
+          kubectl rollout status deployment/bio-rag-backend -n bio-rag --timeout=300s
+          kubectl rollout status deployment/bio-rag-frontend -n bio-rag --timeout=300s
+
+      - name: Notify deployment
+        if: success()
+        run: |
+          echo "Production deployment completed successfully!"
+          echo "Image tag: ${IMAGE_TAG}"
