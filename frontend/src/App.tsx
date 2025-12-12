@@ -8,11 +8,12 @@ function App() {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public routes */}
+        {/* Public routes - Full screen Glassmorphism */}
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Chat - Full screen Glassmorphism (no Layout wrapper) */}
+        {/* Chat - Full screen Glassmorphism */}
         <Route
           path="/chat"
           element={
@@ -22,9 +23,8 @@ function App() {
           }
         />
 
-        {/* Protected routes with layout */}
+        {/* Protected routes with Layout navigation */}
         <Route element={<Layout />}>
-          <Route path="/" element={<Home />} />
           <Route
             path="/search"
             element={
