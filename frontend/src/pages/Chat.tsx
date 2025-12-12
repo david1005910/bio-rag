@@ -71,7 +71,7 @@ export default function Chat() {
 
       {/* Header - Glass Panel */}
       <header
-        className="relative px-6 py-5 mx-4 mt-4 rounded-2xl"
+        className="relative px-6 py-4 mx-4 mt-4 rounded-2xl"
         style={{
           background: 'rgba(255, 255, 255, 0.22)',
           backdropFilter: 'blur(16px)',
@@ -80,18 +80,33 @@ export default function Chat() {
           boxShadow: '0px 4px 24px rgba(0, 0, 0, 0.15), inset 0px 0px 12px rgba(255, 255, 255, 0.25)',
         }}
       >
-        <h1
-          className="text-xl font-semibold text-white"
-          style={{ textShadow: '0px 1px 3px rgba(0, 0, 0, 0.25)' }}
-        >
-          Research Assistant
-        </h1>
-        <p
-          className="text-sm text-white/80"
-          style={{ textShadow: '0px 1px 3px rgba(0, 0, 0, 0.2)' }}
-        >
-          Ask questions about biomedical research
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1
+              className="text-xl font-semibold text-white"
+              style={{ textShadow: '0px 1px 3px rgba(0, 0, 0, 0.25)' }}
+            >
+              Research Assistant
+            </h1>
+            <p
+              className="text-sm text-white/80"
+              style={{ textShadow: '0px 1px 3px rgba(0, 0, 0, 0.2)' }}
+            >
+              Ask questions about biomedical research
+            </p>
+          </div>
+          <a
+            href="/"
+            className="px-4 py-2 rounded-xl text-white/80 hover:text-white transition-all hover:scale-105"
+            style={{
+              background: 'rgba(255, 255, 255, 0.15)',
+              border: '1px solid rgba(255, 255, 255, 0.3)',
+              textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)',
+            }}
+          >
+            ← Home
+          </a>
+        </div>
       </header>
 
       {/* Messages */}
