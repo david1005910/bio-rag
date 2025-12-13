@@ -2,8 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -20,12 +19,12 @@ class Paper(Base):
     pmid: Mapped[str] = mapped_column(String(20), primary_key=True)
     title: Mapped[str] = mapped_column(Text, nullable=False)
     abstract: Mapped[str | None] = mapped_column(Text, nullable=True)
-    authors: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    authors: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     journal: Mapped[str | None] = mapped_column(String(255), nullable=True)
     publication_date: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     doi: Mapped[str | None] = mapped_column(String(100), nullable=True)
-    keywords: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
-    mesh_terms: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    keywords: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
+    mesh_terms: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     citation_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
     pdf_url: Mapped[str | None] = mapped_column(Text, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
@@ -44,8 +43,8 @@ class SavedPaper(Base):
 
     __tablename__ = "saved_papers"
 
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    user_id: Mapped[str] = mapped_column(
+        String(36),
         ForeignKey("users.user_id", ondelete="CASCADE"),
         primary_key=True,
     )
@@ -54,7 +53,7 @@ class SavedPaper(Base):
         ForeignKey("papers.pmid", ondelete="CASCADE"),
         primary_key=True,
     )
-    tags: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    tags: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
     saved_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
 

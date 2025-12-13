@@ -20,9 +20,10 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
-    async def get_by_id(self, user_id: UUID) -> User | None:
+    async def get_by_id(self, user_id: UUID | str) -> User | None:
         """Get user by ID"""
-        stmt = select(User).where(User.user_id == user_id)
+        user_id_str = str(user_id) if isinstance(user_id, UUID) else user_id
+        stmt = select(User).where(User.user_id == user_id_str)
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
 
@@ -33,6 +34,7 @@ class UserRepository(BaseRepository[User]):
         name: str,
         organization: str | None = None,
         research_fields: list[str] | None = None,
+        interests: list[str] | None = None,
     ) -> User:
         """Create new user"""
         user = User(
@@ -41,13 +43,14 @@ class UserRepository(BaseRepository[User]):
             name=name,
             organization=organization,
             research_fields=research_fields,
+            interests=interests,
         )
         self.session.add(user)
         await self.session.flush()
         await self.session.refresh(user)
         return user
 
-    async def update_last_login(self, user_id: UUID) -> None:
+    async def update_last_login(self, user_id: UUID | str) -> None:
         """Update user's last login time"""
         user = await self.get_by_id(user_id)
         if user:
@@ -56,7 +59,7 @@ class UserRepository(BaseRepository[User]):
 
     async def update_interests(
         self,
-        user_id: UUID,
+        user_id: UUID | str,
         interests: list[str],
     ) -> User | None:
         """Update user's interests"""
@@ -67,7 +70,7 @@ class UserRepository(BaseRepository[User]):
             await self.session.refresh(user)
         return user
 
-    async def deactivate(self, user_id: UUID) -> bool:
+    async def deactivate(self, user_id: UUID | str) -> bool:
         """Deactivate user account"""
         user = await self.get_by_id(user_id)
         if user:

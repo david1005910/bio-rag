@@ -18,8 +18,9 @@ class BaseRepository(Generic[ModelType]):
 
     async def get_by_id(self, id: UUID | str) -> ModelType | None:
         """Get entity by ID"""
+        id_value = str(id) if isinstance(id, UUID) else id
         stmt = select(self.model).where(
-            getattr(self.model, self._get_pk_name()) == id
+            getattr(self.model, self._get_pk_name()) == id_value
         )
         result = await self.session.execute(stmt)
         return result.scalar_one_or_none()
@@ -48,7 +49,8 @@ class BaseRepository(Generic[ModelType]):
         data: dict[str, Any],
     ) -> ModelType | None:
         """Update entity"""
-        entity = await self.get_by_id(id)
+        id_value = str(id) if isinstance(id, UUID) else id
+        entity = await self.get_by_id(id_value)
         if entity is None:
             return None
 

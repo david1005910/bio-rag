@@ -55,7 +55,7 @@ class AuthService:
         # Hash password and create user
         hashed_password = hash_password(user_data.password)
 
-        user = await self.user_repo.create(
+        user = await self.user_repo.create_user(
             email=user_data.email,
             password_hash=hashed_password,
             name=user_data.name,
@@ -92,7 +92,7 @@ class AuthService:
             raise AuthenticationError("User account is inactive")
 
         # Update last login
-        await self.user_repo.update(user.user_id, last_login=datetime.now(timezone.utc))
+        await self.user_repo.update(user.user_id, {"last_login": datetime.now(timezone.utc)})
 
         # Generate tokens
         access_token = create_access_token(str(user.user_id))
@@ -130,7 +130,7 @@ class AuthService:
             raise AuthenticationError("Invalid token payload")
 
         # Verify user exists and is active
-        user = await self.user_repo.get(UUID(user_id))
+        user = await self.user_repo.get_by_id(UUID(user_id))
         if not user or not user.is_active:
             raise AuthenticationError("User not found or inactive")
 
@@ -167,7 +167,7 @@ class AuthService:
         if not user_id:
             raise AuthenticationError("Invalid token payload")
 
-        user = await self.user_repo.get(UUID(user_id))
+        user = await self.user_repo.get_by_id(UUID(user_id))
         if not user:
             raise AuthenticationError("User not found")
 

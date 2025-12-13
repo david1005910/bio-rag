@@ -150,16 +150,22 @@ function Home() {
             title="Semantic Search"
             description="Find relevant papers using natural language queries with AI-powered semantic understanding."
             icon="🔍"
+            href="/search"
+            buttonText="Try Search"
           />
           <FeatureCard
             title="AI-Powered Q&A"
             description="Get evidence-based answers to your biomedical questions with citations from scientific papers."
             icon="🤖"
+            href="/chat"
+            buttonText="Ask Now"
           />
           <FeatureCard
             title="Citation Verification"
             description="Every answer includes verified citations to ensure accuracy and traceability."
             icon="✅"
+            href="/chat"
+            buttonText="See Citations"
           />
         </div>
       </div>
@@ -167,10 +173,22 @@ function Home() {
   );
 }
 
-function FeatureCard({ title, description, icon }: { title: string; description: string; icon: string }) {
+function FeatureCard({
+  title,
+  description,
+  icon,
+  href,
+  buttonText
+}: {
+  title: string;
+  description: string;
+  icon: string;
+  href: string;
+  buttonText: string;
+}) {
   return (
     <div
-      className="rounded-2xl p-6 transition-all hover:scale-[1.02]"
+      className="rounded-2xl p-6 transition-all hover:scale-[1.02] flex flex-col"
       style={{
         background: 'rgba(255, 255, 255, 0.18)',
         backdropFilter: 'blur(16px)',
@@ -187,11 +205,22 @@ function FeatureCard({ title, description, icon }: { title: string; description:
         {title}
       </h3>
       <p
-        className="text-white/70"
+        className="text-white/70 flex-1"
         style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
       >
         {description}
       </p>
+      <a
+        href={href}
+        className="mt-4 inline-block px-4 py-2 rounded-xl text-white text-sm font-medium text-center transition-all hover:scale-105 active:scale-95"
+        style={{
+          background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.6), rgba(139, 92, 246, 0.6))',
+          border: '1px solid rgba(255, 255, 255, 0.3)',
+          textShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)',
+        }}
+      >
+        {buttonText} →
+      </a>
     </div>
   );
 }

@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "Bio-RAG"
     DEBUG: bool = False
+    DEMO_MODE: bool = True  # Enable demo mode for testing without API keys
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/biorag"

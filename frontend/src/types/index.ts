@@ -52,8 +52,10 @@ export interface PaperSummary {
   title: string;
   authors: string[];
   journal: string;
-  pub_date?: string;
-  abstract_snippet?: string;
+  publication_date?: string;
+  abstract?: string;
+  relevance_score: number;
+  pdf_url?: string;
 }
 
 export interface SearchResult {
