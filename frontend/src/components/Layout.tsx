@@ -56,6 +56,13 @@ export default function Layout() {
                 >
                   Chat
                 </Link>
+                <Link
+                  to="/tools"
+                  className="text-white/80 hover:text-white transition-colors"
+                  style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
+                >
+                  Tools
+                </Link>
               </div>
             )}
           </div>

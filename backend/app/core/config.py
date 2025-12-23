@@ -22,6 +22,13 @@ class Settings(BaseSettings):
     CHROMA_PORT: int | None = None
     CHROMA_PERSIST_DIR: str = "./chroma_data"
 
+    # Qdrant
+    QDRANT_HOST: str = "localhost"
+    QDRANT_PORT: int = 6333
+    QDRANT_API_KEY: str = ""
+    QDRANT_COLLECTION: str = "biorag_papers"
+    QDRANT_USE_MEMORY: bool = True  # Use in-memory storage for dev
+
     # OpenAI
     OPENAI_API_KEY: str = ""
     OPENAI_MODEL: str = "gpt-4-turbo-preview"

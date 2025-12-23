@@ -3,12 +3,20 @@ from collections.abc import Callable
 from dataclasses import dataclass
 from typing import Any
 
-import chromadb
-from chromadb.config import Settings
-
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# Optional chromadb import - we're migrating to Qdrant
+try:
+    import chromadb
+    from chromadb.config import Settings
+    CHROMADB_AVAILABLE = True
+except ImportError:
+    chromadb = None  # type: ignore
+    Settings = None  # type: ignore
+    CHROMADB_AVAILABLE = False
+    logger.warning("ChromaDB not available. Use Qdrant hybrid store instead.")
 
 
 @dataclass
@@ -267,5 +275,10 @@ class VectorStore:
 
 
 # Singleton instance - use persistent directory if host not configured
-_persist_dir = settings.CHROMA_PERSIST_DIR if not settings.CHROMA_HOST else None
-vector_store = VectorStore(persist_directory=_persist_dir)
+# Only create if chromadb is available
+if CHROMADB_AVAILABLE:
+    _persist_dir = settings.CHROMA_PERSIST_DIR if not settings.CHROMA_HOST else None
+    vector_store = VectorStore(persist_directory=_persist_dir)
+else:
+    vector_store = None  # type: ignore
+    logger.info("Using Qdrant hybrid store instead of ChromaDB")

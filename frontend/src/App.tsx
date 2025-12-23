@@ -2,7 +2,7 @@ import { Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Layout from './components/Layout';
 import ProtectedRoute from './components/ProtectedRoute';
-import { Login, Register, Search, Chat } from './pages';
+import { Login, Register, Search, Chat, Tools } from './pages';
 
 function App() {
   return (
@@ -30,6 +30,14 @@ function App() {
             element={
               <ProtectedRoute>
                 <Search />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/tools"
+            element={
+              <ProtectedRoute>
+                <Tools />
               </ProtectedRoute>
             }
           />
@@ -145,7 +153,7 @@ function Home() {
         </div>
 
         {/* Features */}
-        <div className="mt-20 grid md:grid-cols-3 gap-6">
+        <div className="mt-20 grid md:grid-cols-2 lg:grid-cols-4 gap-6">
           <FeatureCard
             title="Semantic Search"
             description="Find relevant papers using natural language queries with AI-powered semantic understanding."
@@ -159,6 +167,13 @@ function Home() {
             icon="🤖"
             href="/chat"
             buttonText="Ask Now"
+          />
+          <FeatureCard
+            title="Research Tools"
+            description="ArXiv search, trend analysis, paper summarization, and Korean-English medical translation."
+            icon="🛠️"
+            href="/tools"
+            buttonText="Open Tools"
           />
           <FeatureCard
             title="Citation Verification"
