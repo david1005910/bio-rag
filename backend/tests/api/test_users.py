@@ -22,7 +22,7 @@ class TestGetCurrentUser:
     async def test_get_me_unauthenticated(self, client: AsyncClient):
         """Test getting current user without authentication"""
         response = await client.get("/api/v1/users/me")
-        assert response.status_code == 403  # No auth header
+        assert response.status_code == 401  # No auth header
 
 
 class TestUpdateUser:

@@ -1,5 +1,4 @@
 from datetime import datetime
-from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field
 
@@ -32,7 +31,7 @@ class UserUpdate(BaseModel):
 class UserResponse(UserBase):
     """Schema for user response"""
 
-    user_id: UUID
+    user_id: str
     subscription_tier: str
     created_at: datetime
     last_login: datetime | None = None
@@ -45,7 +44,7 @@ class UserResponse(UserBase):
 class UserProfile(BaseModel):
     """Schema for user profile with usage info"""
 
-    user_id: UUID
+    user_id: str
     email: str
     name: str
     organization: str | None

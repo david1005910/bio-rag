@@ -77,7 +77,7 @@ async def update_current_user(
     if not update_dict:
         return UserResponse.model_validate(current_user)
 
-    updated_user = await user_repo.update(current_user.user_id, **update_dict)
+    updated_user = await user_repo.update(current_user.user_id, update_dict)
     if not updated_user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
