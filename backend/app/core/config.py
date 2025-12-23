@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     # App
     APP_NAME: str = "Bio-RAG"
     DEBUG: bool = False
+    DEMO_MODE: bool = True  # Enable demo mode for testing without API keys
 
     # Database
     DATABASE_URL: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/biorag"
@@ -20,6 +21,13 @@ class Settings(BaseSettings):
     CHROMA_HOST: str = ""
     CHROMA_PORT: int | None = None
     CHROMA_PERSIST_DIR: str = "./chroma_data"
+
+    # Qdrant
+    QDRANT_HOST: str = "localhost"
+    QDRANT_PORT: int = 6333
+    QDRANT_API_KEY: str = ""
+    QDRANT_COLLECTION: str = "biorag_papers"
+    QDRANT_USE_MEMORY: bool = True  # Use in-memory storage for dev
 
     # OpenAI
     OPENAI_API_KEY: str = ""

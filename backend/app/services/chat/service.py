@@ -2,7 +2,7 @@
 
 import logging
 import time
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -86,7 +86,7 @@ class ChatService:
         Returns:
             List of session summaries
         """
-        sessions = await self.chat_repo.get_user_sessions(
+        sessions, _ = await self.chat_repo.list_sessions(
             user_id=user_id,
             limit=limit,
             offset=offset,
@@ -194,10 +194,8 @@ class ChatService:
                 session_id = session.session_id
 
         # Store user message
-        user_message_id = uuid4()
         await self.chat_repo.add_message(
             session_id=session_id,
-            message_id=user_message_id,
             role="user",
             content=chat_query.query,
         )
@@ -214,27 +212,23 @@ class ChatService:
         # Convert sources to citations
         citations = self._convert_to_citations(rag_response)
 
+        latency_ms = int((time.time() - start_time) * 1000)
+
         # Store assistant message
-        assistant_message_id = uuid4()
-        await self.chat_repo.add_message(
+        assistant_message = await self.chat_repo.add_message(
             session_id=session_id,
-            message_id=assistant_message_id,
             role="assistant",
             content=rag_response.answer,
             citations=[c.model_dump() for c in citations],
+            latency_ms=latency_ms,
         )
-
-        # Update session
-        await self.chat_repo.update_session(session_id)
-
-        latency_ms = int((time.time() - start_time) * 1000)
 
         return ChatResponse(
             session_id=session_id,
-            message_id=assistant_message_id,
+            message_id=assistant_message.message_id,
             answer=rag_response.answer,
             citations=citations,
-            confidence_score=rag_response.validation.confidence_score,
+            confidence_score=rag_response.validation.confidence_score if rag_response.validation else None,
             latency_ms=latency_ms,
         )
 

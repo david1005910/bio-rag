@@ -1,9 +1,8 @@
 import uuid
 from datetime import datetime
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import Boolean, DateTime, String
-from sqlalchemy.dialects.postgresql import ARRAY, UUID
+from sqlalchemy import Boolean, DateTime, String, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -18,8 +17,8 @@ class User(Base):
 
     __tablename__ = "users"
 
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    user_id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
     email: Mapped[str] = mapped_column(
         String(255), unique=True, nullable=False, index=True
@@ -28,9 +27,9 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(100), nullable=False)
     organization: Mapped[str | None] = mapped_column(String(255), nullable=True)
     research_fields: Mapped[list[str] | None] = mapped_column(
-        ARRAY(String), nullable=True
+        JSON, nullable=True
     )
-    interests: Mapped[list[str] | None] = mapped_column(ARRAY(String), nullable=True)
+    interests: Mapped[list[str] | None] = mapped_column(JSON, nullable=True)
     subscription_tier: Mapped[str] = mapped_column(String(20), default="free")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
     last_login: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

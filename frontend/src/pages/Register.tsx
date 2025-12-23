@@ -51,28 +51,67 @@ export default function Register() {
     }
   };
 
+  const inputStyle = {
+    background: 'rgba(255, 255, 255, 0.15)',
+    border: '1px solid rgba(255, 255, 255, 0.3)',
+    backdropFilter: 'blur(8px)',
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 py-12 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-violet-600 via-purple-500 to-fuchsia-500 py-12 px-4">
+      {/* Animated background orbs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-pink-400 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-cyan-400 rounded-full mix-blend-multiply filter blur-3xl opacity-70 animate-pulse [animation-delay:2s]" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-50 animate-pulse [animation-delay:4s]" />
+      </div>
+
+      <div
+        className="relative max-w-md w-full space-y-6 p-8 rounded-2xl"
+        style={{
+          background: 'rgba(255, 255, 255, 0.22)',
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          border: '1px solid rgba(255, 255, 255, 0.4)',
+          boxShadow: '0px 4px 24px rgba(0, 0, 0, 0.2), inset 0px 0px 12px rgba(255, 255, 255, 0.25)',
+        }}
+      >
         <div>
-          <h1 className="text-center text-3xl font-bold text-indigo-600 dark:text-indigo-400">
+          <h1
+            className="text-center text-3xl font-bold text-white"
+            style={{ textShadow: '0px 2px 4px rgba(0, 0, 0, 0.3)' }}
+          >
             Bio-RAG
           </h1>
-          <h2 className="mt-6 text-center text-2xl font-bold text-gray-900 dark:text-white">
+          <h2
+            className="mt-4 text-center text-xl font-semibold text-white/90"
+            style={{ textShadow: '0px 1px 3px rgba(0, 0, 0, 0.25)' }}
+          >
             Create your account
           </h2>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        <form className="space-y-5" onSubmit={handleSubmit}>
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-600 dark:text-red-400 rounded-lg p-4 text-sm">
+            <div
+              className="rounded-xl p-4 text-sm text-white"
+              style={{
+                background: 'rgba(239, 68, 68, 0.3)',
+                border: '1px solid rgba(239, 68, 68, 0.5)',
+                backdropFilter: 'blur(8px)',
+              }}
+            >
               {error}
             </div>
           )}
 
           <div className="space-y-4">
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="email"
+                className="block text-sm font-medium text-white/90 mb-1"
+                style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
+              >
                 Email address
               </label>
               <input
@@ -82,12 +121,18 @@ export default function Register() {
                 required
                 value={formData.email}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="block w-full rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+                style={inputStyle}
+                placeholder="you@example.com"
               />
             </div>
 
             <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-white/90 mb-1"
+                style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
+              >
                 Full name
               </label>
               <input
@@ -97,13 +142,20 @@ export default function Register() {
                 required
                 value={formData.name}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="block w-full rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+                style={inputStyle}
+                placeholder="John Doe"
               />
             </div>
 
             <div>
-              <label htmlFor="organization" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                Organization (optional)
+              <label
+                htmlFor="organization"
+                className="block text-sm font-medium text-white/90 mb-1"
+                style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
+              >
+                Organization{' '}
+                <span className="text-white/50 font-normal">(optional)</span>
               </label>
               <input
                 id="organization"
@@ -111,12 +163,18 @@ export default function Register() {
                 type="text"
                 value={formData.organization}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="block w-full rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+                style={inputStyle}
+                placeholder="University / Company"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="password"
+                className="block text-sm font-medium text-white/90 mb-1"
+                style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
+              >
                 Password
               </label>
               <input
@@ -126,13 +184,18 @@ export default function Register() {
                 required
                 value={formData.password}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="block w-full rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+                style={inputStyle}
                 placeholder="At least 8 characters"
               />
             </div>
 
             <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+              <label
+                htmlFor="confirmPassword"
+                className="block text-sm font-medium text-white/90 mb-1"
+                style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
+              >
                 Confirm password
               </label>
               <input
@@ -142,7 +205,9 @@ export default function Register() {
                 required
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="mt-1 block w-full rounded-lg border border-gray-300 dark:border-gray-700 px-4 py-3 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="block w-full rounded-xl px-4 py-3 text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-cyan-400/50 transition-all"
+                style={inputStyle}
+                placeholder="Re-enter your password"
               />
             </div>
           </div>
@@ -150,15 +215,36 @@ export default function Register() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 px-4 rounded-xl text-white font-medium focus:outline-none focus:ring-2 focus:ring-cyan-400/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:scale-[1.02] active:scale-[0.98]"
+            style={{
+              background: 'linear-gradient(135deg, #06b6d4, #8b5cf6)',
+              boxShadow: '0px 4px 16px rgba(139, 92, 246, 0.4)',
+              textShadow: '0px 1px 2px rgba(0, 0, 0, 0.3)',
+            }}
           >
             {isLoading ? 'Creating account...' : 'Create account'}
           </button>
 
-          <div className="text-center text-sm text-gray-600 dark:text-gray-400">
+          <div
+            className="text-center text-sm text-white/80"
+            style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
+          >
             Already have an account?{' '}
-            <Link to="/login" className="font-medium text-indigo-600 dark:text-indigo-400 hover:underline">
+            <Link
+              to="/login"
+              className="font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
+            >
               Sign in
+            </Link>
+          </div>
+
+          <div className="text-center">
+            <Link
+              to="/"
+              className="text-sm text-white/60 hover:text-white/80 transition-colors"
+              style={{ textShadow: '0px 1px 2px rgba(0, 0, 0, 0.2)' }}
+            >
+              ← Back to Home
             </Link>
           </div>
         </form>

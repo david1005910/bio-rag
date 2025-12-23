@@ -2,8 +2,7 @@ import uuid
 from datetime import datetime
 from typing import TYPE_CHECKING, Any
 
-from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
-from sqlalchemy.dialects.postgresql import JSON, UUID
+from sqlalchemy import DateTime, ForeignKey, Integer, String, Text, JSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -17,11 +16,11 @@ class ChatSession(Base):
 
     __tablename__ = "chat_sessions"
 
-    session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    session_id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
-    user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    user_id: Mapped[str] = mapped_column(
+        String(36),
         ForeignKey("users.user_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -44,11 +43,11 @@ class ChatMessage(Base):
 
     __tablename__ = "chat_messages"
 
-    message_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    message_id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
-    session_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True),
+    session_id: Mapped[str] = mapped_column(
+        String(36),
         ForeignKey("chat_sessions.session_id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -70,11 +69,11 @@ class SearchLog(Base):
 
     __tablename__ = "search_logs"
 
-    log_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    log_id: Mapped[str] = mapped_column(
+        String(36), primary_key=True, default=lambda: str(uuid.uuid4())
     )
-    user_id: Mapped[uuid.UUID | None] = mapped_column(
-        UUID(as_uuid=True), nullable=True, index=True
+    user_id: Mapped[str | None] = mapped_column(
+        String(36), nullable=True, index=True
     )
     query_text: Mapped[str] = mapped_column(Text, nullable=False)
     filters: Mapped[dict[str, Any] | None] = mapped_column(JSON, nullable=True)

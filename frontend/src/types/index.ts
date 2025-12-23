@@ -52,8 +52,10 @@ export interface PaperSummary {
   title: string;
   authors: string[];
   journal: string;
-  pub_date?: string;
-  abstract_snippet?: string;
+  publication_date?: string;
+  abstract?: string;
+  relevance_score: number;
+  pdf_url?: string;
 }
 
 export interface SearchResult {
@@ -106,4 +108,173 @@ export interface ChatSessionDetail {
   messages: ChatMessage[];
   created_at: string;
   updated_at: string;
+}
+
+// ==================== ArXiv Types ====================
+export interface ArXivPaper {
+  arxiv_id: string;
+  title: string;
+  abstract: string;
+  authors: string[];
+  categories: string[];
+  published: string;
+  updated: string;
+  pdf_url: string;
+  comment?: string;
+  journal_ref?: string;
+}
+
+export interface ArXivSearchQuery {
+  query: string;
+  max_results?: number;
+  sort_by?: 'relevance' | 'lastUpdatedDate' | 'submittedDate';
+  sort_order?: 'ascending' | 'descending';
+}
+
+export interface ArXivSearchResult {
+  results: ArXivPaper[];
+  total: number;
+  query: string;
+}
+
+// ==================== Analytics Types ====================
+export interface TrendAnalysisRequest {
+  keyword: string;
+  max_papers?: number;
+  source?: 'pubmed' | 'arxiv' | 'both';
+  include_ai_summary?: boolean;
+}
+
+export interface TrendAnalysisResponse {
+  keyword: string;
+  translated_keyword?: string;
+  original_language: string;
+  total_papers: number;
+  year_trend?: {
+    years: number[];
+    counts: number[];
+  };
+  key_terms?: {
+    terms: string[];
+    frequencies: number[];
+  };
+  emerging_topics?: Array<{
+    topic: string;
+    growth_rate: number;
+    recent_count: number;
+  }>;
+  content_summary?: {
+    main_themes: string[];
+    key_findings: string[];
+  };
+  report?: string;
+}
+
+export interface QuickTrendResponse {
+  keyword: string;
+  total_papers: number;
+  years: number[];
+  counts: number[];
+  top_terms: string[];
+}
+
+// ==================== Documents Types ====================
+export interface DownloadRequest {
+  papers: Array<{
+    id: string;
+    title: string;
+    pdf_url?: string;
+    abstract?: string;
+  }>;
+}
+
+export interface DownloadResult {
+  paper_id: string;
+  title: string;
+  filepath?: string;
+  success: boolean;
+  error?: string;
+}
+
+export interface DownloadResponse {
+  downloaded: DownloadResult[];
+  total: number;
+  success_count: number;
+}
+
+export interface ExtractRequest {
+  filepaths: string[];
+}
+
+export interface ExtractedDocument {
+  source: string;
+  filepath: string;
+  text: string;
+  text_length: number;
+  success: boolean;
+  error?: string;
+}
+
+export interface ExtractResponse {
+  documents: ExtractedDocument[];
+  total: number;
+  success_count: number;
+}
+
+export interface SummarizeRequest {
+  paper: {
+    id: string;
+    title: string;
+    abstract?: string;
+  };
+  content?: string;
+  language?: 'en' | 'ko';
+}
+
+export interface SummaryResponse {
+  paper_id: string;
+  title: string;
+  summary: string;
+  language: string;
+  success: boolean;
+  error?: string;
+}
+
+// ==================== i18n Types ====================
+export interface DetectLanguageResponse {
+  text: string;
+  language: 'ko' | 'en';
+  language_name: string;
+}
+
+export interface TranslateResponse {
+  original: string;
+  translated: string;
+  source_language: string;
+  target_language: string;
+  method: 'dictionary' | 'ai' | 'none';
+}
+
+export interface MedicalTerm {
+  korean: string;
+  english: string;
+}
+
+export interface QueryTranslationResponse {
+  original: string;
+  translated: string;
+  language: string;
+  is_translated: boolean;
+}
+
+export interface SupportedLanguage {
+  code: string;
+  name: string;
+  name_native: string;
+}
+
+export interface SupportedLanguagesResponse {
+  languages: SupportedLanguage[];
+  translation_direction: string;
+  medical_terms_count: number;
 }

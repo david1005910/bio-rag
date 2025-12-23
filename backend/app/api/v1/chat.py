@@ -6,6 +6,7 @@ from fastapi import APIRouter, HTTPException, status
 from fastapi.responses import StreamingResponse
 
 from app.api.deps import CurrentUser, DbSession
+from app.core.config import settings
 from app.schemas.chat import (
     ChatQuery,
     ChatResponse,
@@ -16,6 +17,15 @@ from app.schemas.chat import (
 from app.services.chat.service import ChatService
 
 router = APIRouter(prefix="/chat", tags=["Chat"])
+
+
+def _check_openai_configured() -> None:
+    """Check if OpenAI API key is configured"""
+    if not settings.OPENAI_API_KEY or settings.OPENAI_API_KEY.startswith("your-"):
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Chat service not configured. Please set a valid OPENAI_API_KEY.",
+        )
 
 
 @router.post("/sessions", response_model=ChatSessionSummary, status_code=status.HTTP_201_CREATED)
@@ -131,11 +141,47 @@ async def query(
     Returns answer with citations from relevant papers.
     Requires authentication.
     """
+    import uuid
+
+    # Check if demo mode is enabled
+    if settings.DEMO_MODE:
+        import time
+        start_time = time.time()
+        from app.services.demo import get_demo_chat_response
+        demo_result = get_demo_chat_response(chat_query.query)
+        latency = int((time.time() - start_time) * 1000)
+        return ChatResponse(
+            session_id=chat_query.session_id or uuid.uuid4(),
+            message_id=uuid.uuid4(),
+            answer=demo_result["answer"],
+            citations=[
+                {
+                    "pmid": c["pmid"],
+                    "title": c["title"],
+                    "relevance_score": c["relevance_score"],
+                    "snippet": c.get("snippet", "Relevant research excerpt from this paper."),
+                }
+                for c in demo_result["citations"]
+            ],
+            latency_ms=latency,
+        )
+
+    _check_openai_configured()
+
     chat_service = ChatService(db)
-    return await chat_service.query(
-        user_id=current_user.user_id,
-        chat_query=chat_query,
-    )
+    try:
+        return await chat_service.query(
+            user_id=current_user.user_id,
+            chat_query=chat_query,
+        )
+    except ValueError as e:
+        error_msg = str(e)
+        if "Embedding function not set" in error_msg:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail="Chat service not initialized. Please check server configuration.",
+            )
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
 
 
 @router.post("/query/stream")
@@ -153,18 +199,23 @@ async def query_stream(
     Returns streaming response as Server-Sent Events.
     Requires authentication.
     """
+    _check_openai_configured()
+
     chat_service = ChatService(db)
 
     # Detect language
     language = chat_service._detect_language(chat_query.query)
 
     async def stream_response():
-        async for chunk in chat_service.rag.stream(
-            query=chat_query.query,
-            language=language,
-        ):
-            yield f"data: {chunk}\n\n"
-        yield "data: [DONE]\n\n"
+        try:
+            async for chunk in chat_service.rag.stream(
+                query=chat_query.query,
+                language=language,
+            ):
+                yield f"data: {chunk}\n\n"
+            yield "data: [DONE]\n\n"
+        except Exception as e:
+            yield f"data: Error: {str(e)}\n\n"
 
     return StreamingResponse(
         stream_response(),

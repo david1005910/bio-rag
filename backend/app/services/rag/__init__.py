@@ -1,4 +1,16 @@
 from app.services.rag.chain import RAGChain, RAGConfig, RAGResponse, rag_chain
+from app.services.rag.embedding import (
+    EMBEDDING_MODELS,
+    BaseEmbedding,
+    EmbeddingModelFactory,
+    EmbeddingService,
+    HuggingFaceEmbedding,
+    OpenAIEmbedding,
+    create_embedding_service,
+    embed_text,
+    embedding_service,
+    get_embedding,
+)
 from app.services.rag.hybrid_search import (
     BM25Index,
     HybridSearchConfig,
@@ -20,6 +32,11 @@ from app.services.rag.reranker import (
     cross_encoder_reranker,
 )
 from app.services.rag.retriever import RAGRetriever, RetrievedDocument, rag_retriever
+from app.services.rag.summarizer import (
+    PaperSummarizer,
+    PaperSummary,
+    create_paper_summarizer,
+)
 from app.services.rag.validator import (
     ResponseValidator,
     ValidationResult,
@@ -32,6 +49,17 @@ __all__ = [
     "RAGConfig",
     "RAGResponse",
     "rag_chain",
+    # Embedding
+    "EMBEDDING_MODELS",
+    "BaseEmbedding",
+    "EmbeddingModelFactory",
+    "EmbeddingService",
+    "HuggingFaceEmbedding",
+    "OpenAIEmbedding",
+    "create_embedding_service",
+    "embed_text",
+    "embedding_service",
+    "get_embedding",
     # Hybrid Search
     "BM25Index",
     "HybridSearchConfig",
@@ -55,6 +83,10 @@ __all__ = [
     "RAGRetriever",
     "RetrievedDocument",
     "rag_retriever",
+    # Summarizer
+    "PaperSummarizer",
+    "PaperSummary",
+    "create_paper_summarizer",
     # Validator
     "ResponseValidator",
     "ValidationResult",

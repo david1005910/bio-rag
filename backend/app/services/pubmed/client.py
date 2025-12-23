@@ -28,7 +28,13 @@ class PubMedClient:
     def __init__(self) -> None:
         self.api_key = settings.PUBMED_API_KEY
         self.rate_limit = settings.PUBMED_RATE_LIMIT
-        self._semaphore = asyncio.Semaphore(self.rate_limit)
+        self._semaphore: asyncio.Semaphore | None = None
+
+    def _get_semaphore(self) -> asyncio.Semaphore:
+        """Get or create semaphore in current event loop"""
+        if self._semaphore is None:
+            self._semaphore = asyncio.Semaphore(self.rate_limit)
+        return self._semaphore
 
     @retry(
         stop=stop_after_attempt(3),
@@ -36,8 +42,8 @@ class PubMedClient:
     )
     async def _request(self, endpoint: str, params: dict[str, Any]) -> str:
         """Make API request with rate limiting"""
-        async with self._semaphore:
-            if self.api_key:
+        async with self._get_semaphore():
+            if self.api_key and not self.api_key.startswith("your-"):
                 params["api_key"] = self.api_key
 
             async with httpx.AsyncClient(timeout=30.0) as client:
