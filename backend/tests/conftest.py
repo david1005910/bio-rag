@@ -74,7 +74,7 @@ async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
 async def test_user(db_session: AsyncSession) -> User:
     """Create test user"""
     user = User(
-        user_id=uuid4(),
+        user_id=str(uuid4()),
         email="test@example.com",
         password_hash=hash_password("testpassword123"),
         name="Test User",
