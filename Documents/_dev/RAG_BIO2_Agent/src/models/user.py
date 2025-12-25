@@ -1,14 +1,31 @@
-from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Table, Integer
+from sqlalchemy import Column, String, DateTime, Text, ForeignKey, Table, Integer, TypeDecorator
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
 from .database import Base
 
+class GUID(TypeDecorator):
+    """Platform-independent GUID type that works with SQLite and PostgreSQL."""
+    impl = String(36)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            if isinstance(value, uuid.UUID):
+                return str(value)
+            return str(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            if not isinstance(value, uuid.UUID):
+                return uuid.UUID(value)
+        return value
+
 user_saved_papers = Table(
     'user_saved_papers',
     Base.metadata,
-    Column('user_id', UUID(as_uuid=True), ForeignKey('users.id'), primary_key=True),
+    Column('user_id', GUID(), ForeignKey('users.id'), primary_key=True),
     Column('paper_pmid', String(20), ForeignKey('papers.pmid'), primary_key=True),
     Column('saved_at', DateTime, default=datetime.utcnow),
     Column('notes', Text)
@@ -17,7 +34,7 @@ user_saved_papers = Table(
 class User(Base):
     __tablename__ = "users"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     email = Column(String(255), unique=True, nullable=False, index=True)
     name = Column(String(255))
     password_hash = Column(String(255))
@@ -30,8 +47,8 @@ class User(Base):
 class ChatSession(Base):
     __tablename__ = "chat_sessions"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'), nullable=False)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey('users.id'), nullable=False)
     title = Column(String(255), default="New Chat")
     created_at = Column(DateTime, default=datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
@@ -42,8 +59,8 @@ class ChatSession(Base):
 class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    session_id = Column(UUID(as_uuid=True), ForeignKey('chat_sessions.id'), nullable=False)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    session_id = Column(GUID(), ForeignKey('chat_sessions.id'), nullable=False)
     role = Column(String(20), nullable=False)  # 'user' or 'assistant'
     content = Column(Text, nullable=False)
     sources = Column(Text)  # JSON string of source papers
@@ -54,8 +71,8 @@ class ChatMessage(Base):
 class QueryLog(Base):
     __tablename__ = "query_logs"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey('users.id'))
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
+    user_id = Column(GUID(), ForeignKey('users.id'))
     query_text = Column(Text, nullable=False)
     query_type = Column(String(50))
     response_time_ms = Column(Integer)

@@ -1,9 +1,26 @@
-from sqlalchemy import Column, String, Text, DateTime, Integer, Table, ForeignKey
+from sqlalchemy import Column, String, Text, DateTime, Integer, Table, ForeignKey, TypeDecorator
 from sqlalchemy.orm import relationship
-from sqlalchemy.dialects.postgresql import UUID
 import uuid
 from datetime import datetime
 from .database import Base
+
+class GUID(TypeDecorator):
+    """Platform-independent GUID type that works with SQLite and PostgreSQL."""
+    impl = String(36)
+    cache_ok = True
+
+    def process_bind_param(self, value, dialect):
+        if value is not None:
+            if isinstance(value, uuid.UUID):
+                return str(value)
+            return str(value)
+        return value
+
+    def process_result_value(self, value, dialect):
+        if value is not None:
+            if not isinstance(value, uuid.UUID):
+                return uuid.UUID(value)
+        return value
 
 paper_authors = Table(
     'paper_authors',
@@ -61,7 +78,7 @@ class Keyword(Base):
 class Chunk(Base):
     __tablename__ = "chunks"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    id = Column(GUID(), primary_key=True, default=uuid.uuid4)
     paper_pmid = Column(String(20), ForeignKey('papers.pmid'), nullable=False)
     section = Column(String(50))
     text = Column(Text, nullable=False)

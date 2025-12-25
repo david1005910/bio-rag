@@ -1,9 +1,10 @@
 import os
+import hashlib
 import numpy as np
 from typing import List, Optional, Literal
 from abc import ABC, abstractmethod
 
-EmbeddingModelType = Literal["pubmedbert", "openai"]
+EmbeddingModelType = Literal["pubmedbert", "openai", "simple"]
 
 class BaseEmbeddingGenerator(ABC):
     @abstractmethod
@@ -18,6 +19,73 @@ class BaseEmbeddingGenerator(ABC):
     @abstractmethod
     def dimension(self) -> int:
         pass
+
+class SimpleEmbedding(BaseEmbeddingGenerator):
+    """Simple hash-based embedding generator that works without external dependencies.
+    Uses word hashing and n-gram features to create semantic-ish embeddings.
+    Not as accurate as neural embeddings but works for basic functionality.
+    """
+    def __init__(self, dimension: int = 768):
+        self._dimension = dimension
+
+    @property
+    def dimension(self) -> int:
+        return self._dimension
+
+    def _hash_word(self, word: str, seed: int = 0) -> np.ndarray:
+        """Hash a word to a vector using multiple hash functions."""
+        h = hashlib.sha256((str(seed) + word.lower()).encode()).hexdigest()
+        # Convert hex to floats
+        values = []
+        for i in range(0, min(len(h), 64), 2):
+            values.append((int(h[i:i+2], 16) - 127.5) / 127.5)
+        return np.array(values)
+
+    def encode(self, text: str) -> np.ndarray:
+        if not text or not text.strip():
+            return np.zeros(self._dimension)
+
+        # Tokenize
+        words = text.lower().split()
+        if not words:
+            return np.zeros(self._dimension)
+
+        # Initialize embedding
+        embedding = np.zeros(self._dimension)
+
+        # Add word embeddings
+        for i, word in enumerate(words):
+            word_vec = np.zeros(self._dimension)
+            for seed in range(24):  # Use multiple hash functions
+                h = self._hash_word(word, seed)
+                start = seed * 32
+                word_vec[start:start + len(h)] = h
+            # Weight by position (words at beginning are more important)
+            weight = 1.0 / (1 + i * 0.1)
+            embedding += word_vec * weight
+
+        # Add n-gram features
+        for n in [2, 3]:
+            for i in range(len(words) - n + 1):
+                ngram = ' '.join(words[i:i+n])
+                ngram_vec = np.zeros(self._dimension)
+                for seed in range(8):
+                    h = self._hash_word(ngram, seed + 100)
+                    start = seed * 32 + 512
+                    end = min(start + len(h), self._dimension)
+                    ngram_vec[start:end] = h[:end-start]
+                embedding += ngram_vec * 0.5
+
+        # Normalize
+        norm = np.linalg.norm(embedding)
+        if norm > 0:
+            embedding = embedding / norm
+
+        return embedding
+
+    def batch_encode(self, texts: List[str]) -> np.ndarray:
+        return np.array([self.encode(text) for text in texts])
+
 
 class PubMedBERTEmbedding(BaseEmbeddingGenerator):
     _model = None
@@ -139,17 +207,34 @@ class EmbeddingService:
         self.model_type = model_type
         self._generator: Optional[BaseEmbeddingGenerator] = None
         self._initialize()
-    
+
     def _initialize(self):
+        if self.model_type == "simple":
+            self._generator = SimpleEmbedding()
+            print("Using simple hash-based embeddings")
+            return
+
         if self.model_type == "pubmedbert":
             try:
                 self._generator = PubMedBERTEmbedding()
+                print("Using PubMedBERT embeddings")
+                return
             except Exception as e:
-                print(f"Failed to load PubMedBERT, falling back to OpenAI: {e}")
+                print(f"Failed to load PubMedBERT: {e}")
+
+        if self.model_type in ["pubmedbert", "openai"]:
+            try:
                 self._generator = OpenAIEmbedding()
                 self.model_type = "openai"
-        else:
-            self._generator = OpenAIEmbedding()
+                print("Using OpenAI embeddings")
+                return
+            except Exception as e:
+                print(f"Failed to load OpenAI embeddings: {e}")
+
+        # Final fallback to simple embeddings
+        print("Falling back to simple hash-based embeddings")
+        self._generator = SimpleEmbedding()
+        self.model_type = "simple"
     
     @property
     def dimension(self) -> int:

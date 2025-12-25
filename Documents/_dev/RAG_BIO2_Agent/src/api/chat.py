@@ -16,19 +16,17 @@ _rag_service = None
 def get_rag_service():
     global _rag_service
     if _rag_service is None:
+        # Try simple embeddings first (works without external dependencies)
+        # For production, use pubmedbert or openai with proper API keys
         try:
             _rag_service = RAGService(
-                embedding_model="pubmedbert", 
+                embedding_model="simple",
                 vector_dimension=768,
                 collection_name="biomedical_papers_768d"
             )
         except Exception as e:
-            print(f"PubMedBERT init failed, using OpenAI: {e}")
-            _rag_service = RAGService(
-                embedding_model="openai", 
-                vector_dimension=1536,
-                collection_name="biomedical_papers_1536d"
-            )
+            print(f"Failed to initialize RAG service: {e}")
+            raise
     return _rag_service
 
 @router.post("/query", response_model=ChatResponse)

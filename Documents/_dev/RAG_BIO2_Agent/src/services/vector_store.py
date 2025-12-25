@@ -11,6 +11,32 @@ class SearchResult:
     score: float
     metadata: Dict[str, Any]
 
+# Singleton Qdrant client
+_qdrant_client = None
+_qdrant_lock = None
+
+def _get_qdrant_client():
+    """Get or create singleton Qdrant client."""
+    global _qdrant_client
+    if _qdrant_client is None:
+        try:
+            from qdrant_client import QdrantClient
+
+            qdrant_url = os.environ.get("QDRANT_URL")
+            qdrant_api_key = os.environ.get("QDRANT_API_KEY")
+
+            if qdrant_url:
+                _qdrant_client = QdrantClient(
+                    url=qdrant_url,
+                    api_key=qdrant_api_key
+                )
+            else:
+                _qdrant_client = QdrantClient(path="./qdrant_data")
+        except Exception as e:
+            print(f"Error initializing Qdrant: {e}")
+            raise
+    return _qdrant_client
+
 class QdrantVectorStore:
     def __init__(self, collection_name: str = None, dimension: int = 768):
         if collection_name is None:
@@ -18,25 +44,14 @@ class QdrantVectorStore:
         else:
             self.collection_name = collection_name
         self.dimension = dimension
-        self._client = None
-        self._initialize()
+        self._client = _get_qdrant_client()
+        self._ensure_collection()
     
-    def _initialize(self):
+    def _ensure_collection(self):
+        """Ensure the collection exists."""
         try:
-            from qdrant_client import QdrantClient
             from qdrant_client.http import models
-            
-            qdrant_url = os.environ.get("QDRANT_URL")
-            qdrant_api_key = os.environ.get("QDRANT_API_KEY")
-            
-            if qdrant_url:
-                self._client = QdrantClient(
-                    url=qdrant_url,
-                    api_key=qdrant_api_key
-                )
-            else:
-                self._client = QdrantClient(path="./qdrant_data")
-            
+
             try:
                 self._client.get_collection(self.collection_name)
             except Exception:
@@ -47,9 +62,8 @@ class QdrantVectorStore:
                         distance=models.Distance.COSINE
                     )
                 )
-                
         except Exception as e:
-            print(f"Error initializing Qdrant: {e}")
+            print(f"Error ensuring collection: {e}")
             raise
     
     def add_documents(

@@ -60,9 +60,11 @@ class RAGService:
         return text
     
     def _init_llm_client(self):
+        """Initialize LLM client. LLM is optional - only needed for query, not indexing."""
+        self.llm_client = None
         base_url = os.environ.get("AI_INTEGRATIONS_OPENAI_BASE_URL")
         api_key = os.environ.get("AI_INTEGRATIONS_OPENAI_API_KEY")
-        
+
         if base_url and api_key:
             self.llm_client = OpenAI(
                 api_key=api_key,
@@ -73,7 +75,12 @@ class RAGService:
             if openai_key:
                 self.llm_client = OpenAI(api_key=openai_key)
             else:
-                raise ValueError("No LLM API key found. Please configure OpenAI integration.")
+                print("Warning: No LLM API key found. Query functionality will be limited.")
+
+    def _require_llm(self):
+        """Check if LLM client is available, raise error if not."""
+        if not self.llm_client:
+            raise ValueError("No LLM API key found. Please configure OpenAI integration for query functionality.")
     
     def index_paper(
         self,
@@ -250,6 +257,7 @@ class RAGService:
         return "\n\n".join(context_parts)
     
     async def _generate_answer(self, question: str, context: str) -> str:
+        self._require_llm()
         user_prompt = f"""Based on the following research paper excerpts, please answer the question.
 
 Context from research papers:
@@ -423,6 +431,7 @@ Please provide a detailed, accurate answer with citations to the relevant papers
         )
     
     async def _decompose_question(self, question: str) -> Dict[str, Any]:
+        self._require_llm()
         decompose_prompt = f"""You are an expert at analyzing complex biomedical research questions.
 Given the following question, analyze it and break it down into simpler sub-questions that can be answered individually.
 
@@ -465,6 +474,7 @@ Return ONLY valid JSON, no other text."""
             }
     
     async def _generate_sub_answer(self, question: str, context: str) -> str:
+        self._require_llm()
         prompt = f"""Based on the following research paper excerpts, briefly answer the question.
 Focus on extracting key facts and findings relevant to the question.
 
@@ -490,11 +500,12 @@ Provide a concise, factual answer with citations [PMID: xxxxx]:"""
             return f"Error: {str(e)}"
     
     async def _synthesize_reasoning_answer(
-        self, 
-        original_question: str, 
+        self,
+        original_question: str,
         accumulated_context: str,
         reasoning_steps: List[Dict[str, Any]]
     ) -> str:
+        self._require_llm()
         steps_summary = "\n".join([
             f"- Step {s['step']}: {s['description']}" + 
             (f"\n  Finding: {s.get('content', '')[:200]}..." if s.get('content') else "")
