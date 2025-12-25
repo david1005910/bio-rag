@@ -10,7 +10,7 @@ class UserCreate(BaseModel):
 
 class UserLogin(BaseModel):
     email: EmailStr
-    password: str
+    password: str = Field(..., min_length=8, max_length=8, description="Password must be exactly 8 characters")
 
 class UserResponse(BaseModel):
     id: UUID
