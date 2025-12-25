@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bio-RAG - Biomedical Research AI Platform</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #1e3a5f 0%, #0f766e 100%);
+        }
+        .chat-message {
+            animation: fadeIn 0.3s ease-in-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .typing-indicator span {
+            animation: typing 1s infinite ease-in-out;
+        }
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+        @keyframes typing {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+        .source-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div id="app">
+        <nav class="gradient-bg text-white shadow-lg">
+            <div class="max-w-7xl mx-auto px-4 py-3">
+                <div class="flex justify-between items-center">
+                    <div class="flex items-center space-x-3">
+                        <i class="fas fa-dna text-2xl"></i>
+                        <h1 class="text-xl font-bold">Bio-RAG</h1>
+                        <span class="text-sm text-teal-200 hidden md:inline">Biomedical Research AI Platform</span>
+                    </div>
+                    <div id="auth-section" class="flex items-center space-x-4">
+                        <div id="logged-out" class="space-x-2">
+                            <button onclick="showModal('login')" class="px-4 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition">
+                                <i class="fas fa-sign-in-alt mr-1"></i> 로그인
+                            </button>
+                            <button onclick="showModal('register')" class="px-4 py-2 rounded-lg bg-teal-500 hover:bg-teal-600 transition">
+                                <i class="fas fa-user-plus mr-1"></i> 회원가입
+                            </button>
+                        </div>
+                        <div id="logged-in" class="hidden flex items-center space-x-3">
+                            <span id="user-name" class="text-sm"></span>
+                            <button onclick="logout()" class="px-3 py-2 rounded-lg bg-white/10 hover:bg-white/20 transition">
+                                <i class="fas fa-sign-out-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </nav>
+
+        <div class="flex min-h-[calc(100vh-64px)]">
+            <aside class="w-64 bg-white shadow-lg hidden lg:block">
+                <div class="p-4 border-b">
+                    <button onclick="newChat()" class="w-full py-2 px-4 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition flex items-center justify-center">
+                        <i class="fas fa-plus mr-2"></i> 새 대화
+                    </button>
+                </div>
+                <nav class="p-4">
+                    <div class="space-y-2">
+                        <button onclick="showSection('search')" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center">
+                            <i class="fas fa-search w-6 text-teal-600"></i>
+                            <span class="ml-2">논문 검색</span>
+                        </button>
+                        <button onclick="showSection('chat')" class="nav-btn w-full text-left px-4 py-3 rounded-lg bg-gray-100 flex items-center">
+                            <i class="fas fa-comments w-6 text-teal-600"></i>
+                            <span class="ml-2">AI 챗봇</span>
+                        </button>
+                        <button onclick="showSection('index')" class="nav-btn w-full text-left px-4 py-3 rounded-lg hover:bg-gray-100 flex items-center">
+                            <i class="fas fa-database w-6 text-teal-600"></i>
+                            <span class="ml-2">논문 인덱싱</span>
+                        </button>
+                    </div>
+                </nav>
+                <div id="chat-history" class="px-4 py-2 border-t">
+                    <h3 class="text-sm font-medium text-gray-500 mb-2">최근 대화</h3>
+                    <div id="chat-sessions" class="space-y-1 max-h-64 overflow-y-auto"></div>
+                </div>
+            </aside>
+
+            <main class="flex-1 p-6">
+                <section id="search-section" class="hidden">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                            <i class="fas fa-search text-teal-600 mr-2"></i>논문 검색
+                        </h2>
+                        <div class="bg-white rounded-xl shadow-lg p-6 mb-6">
+                            <div class="flex gap-4">
+                                <input type="text" id="search-input" placeholder="검색어를 입력하세요 (예: CRISPR gene editing, cancer immunotherapy)" 
+                                    class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500">
+                                <button onclick="searchPapers()" class="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                                    <i class="fas fa-search mr-2"></i>검색
+                                </button>
+                            </div>
+                            <div class="mt-4 flex gap-4 text-sm">
+                                <label class="flex items-center">
+                                    <input type="radio" name="search-type" value="pubmed" checked class="mr-2">
+                                    PubMed 검색
+                                </label>
+                                <label class="flex items-center">
+                                    <input type="radio" name="search-type" value="semantic" class="mr-2">
+                                    의미 기반 검색
+                                </label>
+                            </div>
+                        </div>
+                        <div id="search-results" class="space-y-4"></div>
+                    </div>
+                </section>
+
+                <section id="chat-section" class="h-full flex flex-col">
+                    <div class="max-w-4xl mx-auto w-full flex-1 flex flex-col">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-4">
+                            <i class="fas fa-comments text-teal-600 mr-2"></i>AI 논문 Q&A
+                        </h2>
+                        <div class="bg-white rounded-xl shadow-lg flex-1 flex flex-col overflow-hidden">
+                            <div id="chat-messages" class="flex-1 p-6 overflow-y-auto space-y-4">
+                                <div class="text-center text-gray-500 py-8">
+                                    <i class="fas fa-robot text-6xl text-teal-200 mb-4"></i>
+                                    <p class="text-lg">바이오 연구 관련 질문을 해보세요!</p>
+                                    <p class="text-sm mt-2">예: "CAR-T 세포치료의 최신 연구 동향은?" 또는 "CRISPR off-target 효과를 줄이는 방법은?"</p>
+                                </div>
+                            </div>
+                            <div class="border-t p-4 bg-gray-50">
+                                <div class="flex items-center gap-3 mb-3">
+                                    <label class="flex items-center cursor-pointer">
+                                        <input type="checkbox" id="reasoning-mode" class="sr-only peer">
+                                        <div class="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-teal-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-teal-600"></div>
+                                        <span class="ms-3 text-sm font-medium text-gray-700">
+                                            <i class="fas fa-brain text-teal-600 mr-1"></i>추론 RAG 모드
+                                        </span>
+                                    </label>
+                                    <span class="text-xs text-gray-500">(복잡한 질문을 단계별로 분석)</span>
+                                </div>
+                                <div class="flex gap-3">
+                                    <input type="text" id="chat-input" placeholder="질문을 입력하세요..." 
+                                        class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500 focus:border-teal-500"
+                                        onkeypress="if(event.key==='Enter')sendMessage()">
+                                    <button onclick="sendMessage()" id="send-btn" class="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                                        <i class="fas fa-paper-plane"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <section id="index-section" class="hidden">
+                    <div class="max-w-4xl mx-auto">
+                        <h2 class="text-2xl font-bold text-gray-800 mb-6">
+                            <i class="fas fa-database text-teal-600 mr-2"></i>논문 인덱싱
+                        </h2>
+                        <div class="bg-white rounded-xl shadow-lg p-6">
+                            <p class="text-gray-600 mb-4">PubMed에서 논문을 검색하여 벡터 데이터베이스에 인덱싱합니다.</p>
+                            <div class="flex gap-4 mb-4">
+                                <input type="text" id="index-query" placeholder="인덱싱할 논문 검색어 (예: COVID-19 vaccine efficacy)" 
+                                    class="flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500">
+                                <input type="number" id="index-limit" value="10" min="1" max="50" 
+                                    class="w-24 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-teal-500">
+                                <button onclick="indexPapers()" id="index-btn" class="px-6 py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition">
+                                    <i class="fas fa-plus-circle mr-2"></i>인덱싱
+                                </button>
+                            </div>
+                            <div id="index-status" class="mt-4"></div>
+                            <div id="stats" class="mt-6 p-4 bg-gray-50 rounded-lg">
+                                <h3 class="font-semibold mb-2">현재 인덱싱 상태</h3>
+                                <p class="text-gray-600">인덱싱된 청크: <span id="indexed-count">로딩 중...</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <div id="modal-overlay" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center">
+            <div class="bg-white rounded-xl p-6 w-full max-w-md mx-4">
+                <div id="login-modal" class="hidden">
+                    <h3 class="text-xl font-bold mb-4">로그인</h3>
+                    <form onsubmit="handleLogin(event)">
+                        <input type="email" id="login-email" placeholder="이메일" class="w-full px-4 py-3 border rounded-lg mb-3" required>
+                        <input type="password" id="login-password" placeholder="비밀번호" class="w-full px-4 py-3 border rounded-lg mb-4" required>
+                        <button type="submit" class="w-full py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700">로그인</button>
+                    </form>
+                    <p id="login-error" class="text-red-500 text-sm mt-2 hidden"></p>
+                </div>
+                <div id="register-modal" class="hidden">
+                    <h3 class="text-xl font-bold mb-4">회원가입</h3>
+                    <form onsubmit="handleRegister(event)">
+                        <input type="text" id="register-name" placeholder="이름" class="w-full px-4 py-3 border rounded-lg mb-3">
+                        <input type="email" id="register-email" placeholder="이메일" class="w-full px-4 py-3 border rounded-lg mb-3" required>
+                        <input type="password" id="register-password" placeholder="비밀번호 (6자 이상)" class="w-full px-4 py-3 border rounded-lg mb-4" required minlength="6">
+                        <button type="submit" class="w-full py-3 bg-teal-600 text-white rounded-lg hover:bg-teal-700">가입하기</button>
+                    </form>
+                    <p id="register-error" class="text-red-500 text-sm mt-2 hidden"></p>
+                </div>
+                <button onclick="hideModal()" class="absolute top-4 right-4 text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

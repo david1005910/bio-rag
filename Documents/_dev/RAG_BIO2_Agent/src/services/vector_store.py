@@ -1,0 +1,152 @@
+import os
+import uuid
+from typing import List, Dict, Any, Optional
+from dataclasses import dataclass
+import numpy as np
+
+@dataclass
+class SearchResult:
+    id: str
+    text: str
+    score: float
+    metadata: Dict[str, Any]
+
+class QdrantVectorStore:
+    def __init__(self, collection_name: str = None, dimension: int = 768):
+        if collection_name is None:
+            self.collection_name = f"biomedical_papers_{dimension}d"
+        else:
+            self.collection_name = collection_name
+        self.dimension = dimension
+        self._client = None
+        self._initialize()
+    
+    def _initialize(self):
+        try:
+            from qdrant_client import QdrantClient
+            from qdrant_client.http import models
+            
+            qdrant_url = os.environ.get("QDRANT_URL")
+            qdrant_api_key = os.environ.get("QDRANT_API_KEY")
+            
+            if qdrant_url:
+                self._client = QdrantClient(
+                    url=qdrant_url,
+                    api_key=qdrant_api_key
+                )
+            else:
+                self._client = QdrantClient(path="./qdrant_data")
+            
+            try:
+                self._client.get_collection(self.collection_name)
+            except Exception:
+                self._client.create_collection(
+                    collection_name=self.collection_name,
+                    vectors_config=models.VectorParams(
+                        size=self.dimension,
+                        distance=models.Distance.COSINE
+                    )
+                )
+                
+        except Exception as e:
+            print(f"Error initializing Qdrant: {e}")
+            raise
+    
+    def add_documents(
+        self,
+        texts: List[str],
+        embeddings: np.ndarray,
+        metadatas: List[Dict[str, Any]],
+        ids: Optional[List[str]] = None
+    ) -> List[str]:
+        from qdrant_client.http import models
+        
+        if ids is None:
+            ids = [str(uuid.uuid4()) for _ in range(len(texts))]
+        
+        points = []
+        for i, (text, embedding, metadata) in enumerate(zip(texts, embeddings, metadatas)):
+            payload = {
+                "text": text,
+                **metadata
+            }
+            points.append(models.PointStruct(
+                id=ids[i],
+                vector=embedding.tolist(),
+                payload=payload
+            ))
+        
+        self._client.upsert(
+            collection_name=self.collection_name,
+            points=points
+        )
+        
+        return ids
+    
+    def search(
+        self,
+        query_embedding: np.ndarray,
+        top_k: int = 5,
+        filter_dict: Optional[Dict[str, Any]] = None
+    ) -> List[SearchResult]:
+        from qdrant_client.http import models
+        
+        query_filter = None
+        if filter_dict:
+            conditions = []
+            for key, value in filter_dict.items():
+                if isinstance(value, list):
+                    conditions.append(models.FieldCondition(
+                        key=key,
+                        match=models.MatchAny(any=value)
+                    ))
+                else:
+                    conditions.append(models.FieldCondition(
+                        key=key,
+                        match=models.MatchValue(value=value)
+                    ))
+            query_filter = models.Filter(must=conditions)
+        
+        results = self._client.search(
+            collection_name=self.collection_name,
+            query_vector=query_embedding.tolist(),
+            limit=top_k,
+            query_filter=query_filter
+        )
+        
+        search_results = []
+        for result in results:
+            payload = result.payload or {}
+            search_results.append(SearchResult(
+                id=str(result.id),
+                text=payload.get("text", ""),
+                score=result.score,
+                metadata={k: v for k, v in payload.items() if k != "text"}
+            ))
+        
+        return search_results
+    
+    def delete_by_pmid(self, pmid: str):
+        from qdrant_client.http import models
+        
+        self._client.delete(
+            collection_name=self.collection_name,
+            points_selector=models.FilterSelector(
+                filter=models.Filter(
+                    must=[
+                        models.FieldCondition(
+                            key="pmid",
+                            match=models.MatchValue(value=pmid)
+                        )
+                    ]
+                )
+            )
+        )
+    
+    def get_collection_info(self) -> Dict[str, Any]:
+        info = self._client.get_collection(self.collection_name)
+        return {
+            "name": self.collection_name,
+            "points_count": info.points_count,
+            "vectors_count": getattr(info, 'vectors_count', info.points_count)
+        }
