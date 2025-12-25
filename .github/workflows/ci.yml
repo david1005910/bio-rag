@@ -3,12 +3,9 @@ name: CI
 on:
   push:
     branches: [main, develop]
-    paths:
-      - 'Documents/_dev/RAG_BIO2_Agent/**'
   pull_request:
     branches: [main, develop]
-    paths:
-      - 'Documents/_dev/RAG_BIO2_Agent/**'
+  workflow_dispatch:
 
 defaults:
   run:
