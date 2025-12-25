@@ -5,7 +5,7 @@ from uuid import UUID
 
 class UserCreate(BaseModel):
     email: EmailStr
-    password: str = Field(..., min_length=6)
+    password: str = Field(..., min_length=8, max_length=8, description="Password must be exactly 8 characters")
     name: Optional[str] = None
 
 class UserLogin(BaseModel):

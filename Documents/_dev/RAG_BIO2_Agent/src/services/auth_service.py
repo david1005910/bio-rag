@@ -1,8 +1,9 @@
 import os
+import hashlib
+import secrets
 from datetime import datetime, timedelta
 from typing import Optional
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from sqlalchemy.orm import Session
 from src.models.user import User
 
@@ -10,13 +11,22 @@ SECRET_KEY = os.environ.get("SESSION_SECRET", "bio-rag-secret-key-change-in-prod
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24  # 24 hours
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def verify_password(plain_password: str, hashed_password: str) -> bool:
-    return pwd_context.verify(plain_password, hashed_password)
+    """Verify password using SHA256 with salt."""
+    if not plain_password or not hashed_password:
+        return False
+    try:
+        salt, stored_hash = hashed_password.split("$", 1)
+        computed_hash = hashlib.sha256((salt + plain_password).encode()).hexdigest()
+        return computed_hash == stored_hash
+    except ValueError:
+        return False
 
 def get_password_hash(password: str) -> str:
-    return pwd_context.hash(password)
+    """Hash password using SHA256 with random salt."""
+    salt = secrets.token_hex(16)
+    hash_value = hashlib.sha256((salt + password).encode()).hexdigest()
+    return f"{salt}${hash_value}"
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
