@@ -104,7 +104,7 @@ class QdrantVectorStore:
         filter_dict: Optional[Dict[str, Any]] = None
     ) -> List[SearchResult]:
         from qdrant_client.http import models
-        
+
         query_filter = None
         if filter_dict:
             conditions = []
@@ -120,24 +120,25 @@ class QdrantVectorStore:
                         match=models.MatchValue(value=value)
                     ))
             query_filter = models.Filter(must=conditions)
-        
-        results = self._client.search(
+
+        # Use query_points for newer qdrant-client versions
+        results = self._client.query_points(
             collection_name=self.collection_name,
-            query_vector=query_embedding.tolist(),
+            query=query_embedding.tolist(),
             limit=top_k,
             query_filter=query_filter
         )
-        
+
         search_results = []
-        for result in results:
-            payload = result.payload or {}
+        for point in results.points:
+            payload = point.payload or {}
             search_results.append(SearchResult(
-                id=str(result.id),
+                id=str(point.id),
                 text=payload.get("text", ""),
-                score=result.score,
+                score=point.score if point.score is not None else 0.0,
                 metadata={k: v for k, v in payload.items() if k != "text"}
             ))
-        
+
         return search_results
     
     def delete_by_pmid(self, pmid: str):
