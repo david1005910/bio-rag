@@ -40,7 +40,7 @@ import re
 import json
 
 
-class TestableRAGService:
+class _TestableRAGService:
     """
     A testable version of RAGService that contains the actual logic
     but doesn't require database/external dependencies.
@@ -589,7 +589,7 @@ def mock_translation_service():
 @pytest.fixture
 def rag_service_with_mocks(mock_embedding_service, mock_vector_store, mock_llm_client):
     """Create a testable RAGService instance with all dependencies mocked."""
-    return TestableRAGService(
+    return _TestableRAGService(
         embedding_service=mock_embedding_service,
         vector_store=mock_vector_store,
         llm_client=mock_llm_client

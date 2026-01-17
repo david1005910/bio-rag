@@ -32,7 +32,7 @@ class MockEmbeddingGenerator:
         return np.array(embeddings)
 
 
-class TestablePubMedBERTEmbedding:
+class _TestablePubMedBERTEmbedding:
     """Testable version of PubMedBERT embedding generator."""
 
     def __init__(self, dimension: int = 768):
@@ -58,7 +58,7 @@ class TestablePubMedBERTEmbedding:
         return np.array(embeddings)
 
 
-class TestableOpenAIEmbedding:
+class _TestableOpenAIEmbedding:
     """Testable version of OpenAI embedding generator."""
 
     def __init__(self, model: str = "text-embedding-3-small", dimension: int = 1536):
@@ -87,7 +87,7 @@ class TestableOpenAIEmbedding:
         return np.array(embeddings)
 
 
-class TestableEmbeddingService:
+class _TestableEmbeddingService:
     """Testable version of EmbeddingService."""
 
     def __init__(self, model_type: str = "pubmedbert"):
@@ -97,9 +97,9 @@ class TestableEmbeddingService:
 
     def _initialize(self):
         if self.model_type == "pubmedbert":
-            self._generator = TestablePubMedBERTEmbedding(dimension=768)
+            self._generator = _TestablePubMedBERTEmbedding(dimension=768)
         else:
-            self._generator = TestableOpenAIEmbedding(dimension=1536)
+            self._generator = _TestableOpenAIEmbedding(dimension=1536)
 
     @property
     def dimension(self) -> int:
@@ -123,25 +123,25 @@ class TestableEmbeddingService:
 @pytest.fixture
 def pubmedbert_embedding():
     """Create a testable PubMedBERT embedding generator."""
-    return TestablePubMedBERTEmbedding()
+    return _TestablePubMedBERTEmbedding()
 
 
 @pytest.fixture
 def openai_embedding():
     """Create a testable OpenAI embedding generator."""
-    return TestableOpenAIEmbedding()
+    return _TestableOpenAIEmbedding()
 
 
 @pytest.fixture
 def embedding_service_pubmedbert():
     """Create an embedding service with PubMedBERT."""
-    return TestableEmbeddingService(model_type="pubmedbert")
+    return _TestableEmbeddingService(model_type="pubmedbert")
 
 
 @pytest.fixture
 def embedding_service_openai():
     """Create an embedding service with OpenAI."""
-    return TestableEmbeddingService(model_type="openai")
+    return _TestableEmbeddingService(model_type="openai")
 
 
 # ============================================================================

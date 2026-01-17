@@ -16,7 +16,7 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24
 
 
-class TestableAuthService:
+class _TestableAuthService:
     """Testable version of auth service functions.
 
     Uses SHA256 for password hashing in tests to avoid bcrypt compatibility issues.
@@ -96,7 +96,7 @@ class TestableAuthService:
 @pytest.fixture
 def auth_service():
     """Create a testable auth service instance."""
-    return TestableAuthService()
+    return _TestableAuthService()
 
 
 @pytest.fixture
@@ -206,7 +206,7 @@ class TestAccessToken:
         token = auth_service.create_access_token(data)
 
         # Create new service with different secret
-        other_service = TestableAuthService(secret_key="different-secret")
+        other_service = _TestableAuthService(secret_key="different-secret")
         decoded = other_service.decode_token(token)
 
         assert decoded is None

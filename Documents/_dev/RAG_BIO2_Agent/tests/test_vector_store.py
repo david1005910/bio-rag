@@ -20,7 +20,7 @@ class SearchResult:
     metadata: Dict[str, Any]
 
 
-class TestableVectorStore:
+class _TestableVectorStore:
     """In-memory vector store for testing."""
 
     def __init__(self, collection_name: str = None, dimension: int = 768):
@@ -130,13 +130,13 @@ class TestableVectorStore:
 @pytest.fixture
 def vector_store():
     """Create a testable vector store instance."""
-    return TestableVectorStore(dimension=768)
+    return _TestableVectorStore(dimension=768)
 
 
 @pytest.fixture
 def vector_store_1536():
     """Create a testable vector store with 1536 dimensions."""
-    return TestableVectorStore(dimension=1536)
+    return _TestableVectorStore(dimension=1536)
 
 
 @pytest.fixture
@@ -193,17 +193,17 @@ class TestVectorStoreInitialization:
 
     def test_default_collection_name(self):
         """Test default collection name is based on dimension."""
-        store = TestableVectorStore(dimension=768)
+        store = _TestableVectorStore(dimension=768)
         assert store.collection_name == "biomedical_papers_768d"
 
     def test_custom_collection_name(self):
         """Test custom collection name."""
-        store = TestableVectorStore(collection_name="my_collection", dimension=768)
+        store = _TestableVectorStore(collection_name="my_collection", dimension=768)
         assert store.collection_name == "my_collection"
 
     def test_dimension_1536(self):
         """Test 1536 dimension collection name."""
-        store = TestableVectorStore(dimension=1536)
+        store = _TestableVectorStore(dimension=1536)
         assert store.collection_name == "biomedical_papers_1536d"
         assert store.dimension == 1536
 

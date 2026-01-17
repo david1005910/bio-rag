@@ -9,7 +9,7 @@ from unittest.mock import MagicMock
 # Testable implementation of TranslationService
 # ============================================================================
 
-class TestableTranslationService:
+class _TestableTranslationService:
     """Testable version of TranslationService."""
 
     def __init__(self, client=None):
@@ -65,7 +65,7 @@ class TestableTranslationService:
 @pytest.fixture
 def translation_service():
     """Create a translation service without client."""
-    return TestableTranslationService()
+    return _TestableTranslationService()
 
 
 @pytest.fixture
@@ -77,7 +77,7 @@ def translation_service_with_mock_client():
     mock_response.choices[0].message.content = "Translated English text"
     mock_client.chat.completions.create.return_value = mock_response
 
-    return TestableTranslationService(client=mock_client)
+    return _TestableTranslationService(client=mock_client)
 
 
 # ============================================================================
@@ -186,7 +186,7 @@ class TestTranslateToEnglish:
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = Exception("API Error")
 
-        service = TestableTranslationService(client=mock_client)
+        service = _TestableTranslationService(client=mock_client)
         korean_text = "암 치료"
 
         result = service.translate_to_english(korean_text)
@@ -225,13 +225,13 @@ class TestClientInitialization:
 
     def test_service_without_client(self):
         """Test service works without client."""
-        service = TestableTranslationService()
+        service = _TestableTranslationService()
         assert service.client is None
 
     def test_service_with_client(self):
         """Test service with client."""
         mock_client = MagicMock()
-        service = TestableTranslationService(client=mock_client)
+        service = _TestableTranslationService(client=mock_client)
         assert service.client == mock_client
 
 

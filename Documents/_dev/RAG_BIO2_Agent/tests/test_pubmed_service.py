@@ -26,7 +26,7 @@ class PaperMetadata:
     pdf_url: Optional[str] = None
 
 
-class TestablePubMedService:
+class _TestablePubMedService:
     """Testable version of PubMed service."""
 
     BASE_URL = "https://eutils.ncbi.nlm.nih.gov/entrez/eutils/"
@@ -264,13 +264,13 @@ SAMPLE_PUBMED_XML_MULTIPLE = '''<?xml version="1.0" encoding="UTF-8"?>
 @pytest.fixture
 def pubmed_service():
     """Create a testable PubMed service instance."""
-    return TestablePubMedService()
+    return _TestablePubMedService()
 
 
 @pytest.fixture
 def pubmed_service_with_api_key():
     """Create a PubMed service with API key."""
-    return TestablePubMedService(api_key="test_api_key")
+    return _TestablePubMedService(api_key="test_api_key")
 
 
 # ============================================================================
