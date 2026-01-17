@@ -497,6 +497,100 @@ class TestTranslation:
         assert result == "translated query"
 
 
+class TestFallbackAnswer:
+    """Tests for fallback answer generation when LLM is unavailable."""
+
+    def test_fallback_answer_empty_results(self, rag_service_with_mocks):
+        """Test fallback returns appropriate message for empty results."""
+        service = rag_service_with_mocks
+
+        answer = service._generate_fallback_answer("test question", [])
+
+        assert answer == "No relevant information found."
+
+    def test_fallback_answer_includes_paper_count(self, rag_service_with_mocks, sample_search_results):
+        """Test fallback answer includes the number of papers found."""
+        service = rag_service_with_mocks
+
+        answer = service._generate_fallback_answer("test question", sample_search_results)
+
+        assert "3 relevant papers" in answer
+
+    def test_fallback_answer_includes_paper_info(self, rag_service_with_mocks, sample_search_results):
+        """Test fallback answer includes paper titles and PMIDs."""
+        service = rag_service_with_mocks
+
+        answer = service._generate_fallback_answer("test question", sample_search_results)
+
+        assert "PMID: 12345" in answer
+        assert "Effects of Drug X on Cancer" in answer
+
+    def test_fallback_answer_truncates_long_text(self, rag_service_with_mocks):
+        """Test fallback answer truncates text longer than 300 chars."""
+        long_text = "A" * 500
+        results = [
+            MockSearchResult(
+                id="1",
+                text=long_text,
+                score=0.9,
+                metadata={"pmid": "123", "title": "Test Paper", "journal": "Test"}
+            )
+        ]
+
+        service = rag_service_with_mocks
+        answer = service._generate_fallback_answer("test", results)
+
+        # Should contain truncated text with ellipsis
+        assert "A" * 300 + "..." in answer
+        assert "A" * 301 not in answer
+
+    def test_fallback_answer_limits_to_three_results(self, rag_service_with_mocks):
+        """Test fallback answer shows maximum of 3 results."""
+        results = [
+            MockSearchResult(
+                id=str(i),
+                text=f"Text for paper {i}",
+                score=0.9 - i * 0.1,
+                metadata={"pmid": str(i), "title": f"Paper {i}", "journal": "Test"}
+            )
+            for i in range(5)
+        ]
+
+        service = rag_service_with_mocks
+        answer = service._generate_fallback_answer("test", results)
+
+        # Should include papers 0, 1, 2 but not 3, 4
+        assert "Paper 0" in answer
+        assert "Paper 1" in answer
+        assert "Paper 2" in answer
+        assert "Paper 3" not in answer
+        assert "Paper 4" not in answer
+
+    def test_fallback_answer_includes_api_key_note(self, rag_service_with_mocks, sample_search_results):
+        """Test fallback answer includes note about configuring API key."""
+        service = rag_service_with_mocks
+
+        answer = service._generate_fallback_answer("test question", sample_search_results)
+
+        assert "OpenAI API key" in answer
+
+    @pytest.mark.asyncio
+    async def test_query_uses_fallback_when_no_llm(self, rag_service_with_mocks, sample_search_results):
+        """Test query uses fallback answer when LLM client is None."""
+        service = rag_service_with_mocks
+        service.llm_client = None  # No LLM available
+        service.vector_store.search.return_value = sample_search_results
+
+        response = await service.query("What are the effects of Drug X?")
+
+        # Should use fallback answer
+        assert "relevant papers" in response.answer
+        assert "OpenAI API key" in response.answer
+        # Confidence should be average of search scores
+        expected_confidence = sum(r.score for r in sample_search_results) / len(sample_search_results)
+        assert abs(response.confidence - expected_confidence) < 0.01
+
+
 class TestErrorHandling:
     """Tests for error handling scenarios."""
 

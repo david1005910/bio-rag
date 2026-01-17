@@ -198,10 +198,16 @@ class _TestableRAGService:
             )
 
         context = self._build_context(search_results)
-        answer = await self._generate_answer(question, context)
-
         sources = self._extract_sources(search_results)
-        confidence = self._calculate_confidence(search_results, answer)
+
+        # Try to generate answer with LLM, fallback to context summary if no LLM
+        if self.llm_client:
+            answer = await self._generate_answer(question, context)
+            confidence = self._calculate_confidence(search_results, answer)
+        else:
+            # No LLM available - provide search results as answer
+            answer = self._generate_fallback_answer(question, search_results)
+            confidence = sum(r.score for r in search_results) / len(search_results) if search_results else 0.0
 
         return RAGResponse(
             answer=answer,
@@ -209,6 +215,22 @@ class _TestableRAGService:
             confidence=confidence,
             chunks_used=search_results
         )
+
+    def _generate_fallback_answer(self, question: str, results: List[MockSearchResult]) -> str:
+        """Generate a simple answer from search results when LLM is not available."""
+        if not results:
+            return "No relevant information found."
+
+        answer_parts = [f"Based on {len(results)} relevant papers found for your question:\n"]
+
+        for i, result in enumerate(results[:3], 1):
+            pmid = result.metadata.get("pmid", "Unknown")
+            title = result.metadata.get("title", "Unknown")
+            text = result.text[:300] + "..." if len(result.text) > 300 else result.text
+            answer_parts.append(f"\n**[{i}] {title}** (PMID: {pmid})\n{text}\n")
+
+        answer_parts.append("\n*Note: For AI-generated answers, please configure an OpenAI API key.*")
+        return "".join(answer_parts)
 
     def _build_context(self, results: List[MockSearchResult]) -> str:
         context_parts = []
